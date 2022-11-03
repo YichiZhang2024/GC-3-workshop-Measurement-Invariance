@@ -54,6 +54,7 @@ library(pinsearch)
 # What Is Measurement Invariance (MI)?
 
 - Formal definition: 
+$$f(Y|\eta, g) = f(Y|\eta),$$ for all $Y, \eta, g$ (Mellenbergh, 1989)
 
 - Implied meaning: Using the same questionnaire in different groups (such as countries or at various points in time, or under different conditions) does measure the same construct in the same way.
 
@@ -135,7 +136,7 @@ head(data)
 mod_n <- 'N =~ n1 + n2 + n6 + n8'
 # check model fit
 fit_n <- cfa(mod = mod_n, data = data)
-# summary(fit_e, fit.measures = TRUE)
+# summary(fit_n, fit.measures = TRUE)
 ```
 
 -----------------
@@ -144,7 +145,7 @@ fit_n <- cfa(mod = mod_n, data = data)
 semPlot::semPaths(lavaanify(mod_n), rotation = 2, intercepts = TRUE)
 ```
 
-# Testing Metric Invariance
+# Testing Configural and Metric Invariance
 
 - Metric Invariance add equality constraints on factor loadings across gender
 
@@ -154,6 +155,8 @@ semPlot::semPaths(lavaanify(mod_n), rotation = 2, intercepts = TRUE)
 # fit configural invariance model
 fit_con <- cfa(mod = mod_n, data = data, 
                group = "sex", std.lv = TRUE) 
+# check if one factor CFA model fit for all groups
+# summary(fit_con, fit.measures = TRUE)
 # fit metric invariance model (loadings are constrained to be equal across groups)
 fit_met <- cfa(mod = mod_n, data = data, group = "sex", 
                group.equal = "loadings", std.lv = TRUE)
@@ -176,20 +179,7 @@ fit_sca <- cfa(mod = mod_n, data = data, group = "sex",
 lavTestLRT(fit_met, fit_sca)
 ```
 
-# Option 1: `pinSearch` Function From `pinsearch` Package
-
-- This function automates the iterative search for noninvariant parameters 
-(loadings, intercepts, residuals)
-
-- Item `n1` has noninvariant intercepts across groups  
-
-```{r}
-res <- pinsearch::pinSearch(config_mod = mod_n, data = data, effect_size = TRUE,
-                     group = "sex",  type = "intercepts")
-res$`Non-Invariant Items`
-```
-
-# Option 2: Sequential MI Testing By Scale Items
+# Option 1: Sequential MI Testing By Scale Items
 
 - Manually searching for noninvariant parameters (loadings, intercepts, residuals)
 
@@ -240,6 +230,19 @@ fit_str <- cfa(mod_n, data = data, group = "sex",
 lavTestLRT(fit_sca1, fit_str)
 ```
 
+# Option 2: `pinSearch` Function From `pinsearch` Package
+
+- This function automates the iterative search for noninvariant parameters 
+(loadings, intercepts, residuals)
+
+- Item `n1` has noninvariant intercepts across groups  
+
+```{r}
+res <- pinsearch::pinSearch(config_mod = mod_n, data = data, effect_size = TRUE,
+                     group = "sex",  type = "intercepts")
+res$`Non-Invariant Items`
+```
+
 # Testing Strict Invariance
 
 - Items `n1`,`n2` has noninvariant unique factor variances across gender
@@ -263,6 +266,7 @@ res_str$effect_size
 final_fit <- cfa(mod_n, data = data, group = "sex", 
                 group.equal = c("loadings", "intercepts", "residuals"),
                 group.partial = c("n1 ~ 1", "n1 ~~ n1", "n2 ~~ n2"), std.lv = TRUE) 
+# summary(final_fit, fit.measures = TRUE)
 ```
 
 # Exercise time
