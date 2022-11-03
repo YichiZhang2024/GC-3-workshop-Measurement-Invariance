@@ -1,0 +1,147 @@
+---
+title: "GC-3 Workshop: Exercise"
+author: "Yichi Zhang"
+date: "2022-11-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here) 
+library(haven)
+library(lavaan)
+library(tidyverse)
+library(psych)
+library(papaja)
+## install package pinsearch if first time using this package
+# install.packages("devtools")
+# devtools::install_github("marklhc/pinsearch")
+library(pinsearch)
+```
+
+In the demonstration, we investigated measurement invariance (MI) of the mini-IPIP across gender. Specifically, we focused on the subscale neuroticism. Please work on the subscale extraversion in this example. Good luck :) 
+
+# Import Data
+  
+```{r}
+data <- read.table(here::here("example", "IPIPFFM.dat"),
+                   header = TRUE)%>%
+  select("sex", "e1", "e4", "e6", "e7", "n1", "n2", "n6", "n8")
+head(data)
+```
+
+# Model Specification
+
+```{r}
+mod_ex <- 'Extraversion =~ e1 + e4 + e6 + e7'
+# original extraversion model
+fit_e <- cfa(mod_ex, data = data)
+summary(fit_e, fit.measures = TRUE)
+```
+
+```{r}
+semPlot::semPaths(lavaanify(mod_ex), rotation = 2, intercepts = TRUE)
+```
+
+# Testing Metric Invariance
+
+- Metric Invariance add equality constraints on factor loadings across groups
+
+- The Likelihood Ratio Test (LRT) suggests the metric invariance model has similar fit as the configural invariance model
+
+```{r}
+# fit configural invariance model
+fit_con <- cfa(mod_ex, data = data, group = "sex", std.lv = TRUE) 
+summary(fit_con, fit.measures = TRUE)
+# fit metric invariance model
+fit_met <- cfa(mod_ex, data = data, group = "sex", group.equal = "loadings", std.lv = TRUE)
+# summary(fit_met, fit.measures = TRUE)
+lavTestLRT(fit_con, fit_met)
+```
+
+# Testing Scalar Invariance
+
+- Scalar invariance add equality constraints on factor loadings and intercepts across groups
+
+- The LRT suggests the scalar invariance model fit significantly worse than the metric invariance model
+
+```{r}
+# fit scalar invariance model
+fit_sca <- cfa(mod_ex, data = data, group = "sex", 
+               group.equal = c("loadings", "intercepts"), std.lv = TRUE) 
+#summary(fit_sca, fit.measures = TRUE)
+lavTestLRT(fit_sca, fit_met)
+```
+
+# Option 1: `pinSearch` Function From `pinsearch` Package
+
+- This function automates the iterative search for noninvariant parameters 
+(loadings, intercepts, residuals)
+
+- item 6 has noninvariant intercepts across groups  
+
+```{r}
+res <- pinsearch::pinSearch(config_mod = mod_ex, data = data, effect_size = TRUE,
+                     group = "sex",  type = "residuals")
+res$`Non-Invariant Items`
+res$effect_size
+```
+
+# Option 2: Sequential MI Testing By Scale Items
+
+- Manually searching for noninvariant parameters (loadings, intercepts, residuals)
+
+- Find the item associated with the largest change in $\chi^2$ => item e6
+
+```{r}
+# fit scalar invariance model
+fit_sca1 <- cfa(mod_ex, data = data, group = "sex", 
+                group.equal = c("loadings", "intercepts"), 
+                group.partial = "e1 ~1", std.lv = TRUE) 
+lavTestLRT(fit_sca1, fit_sca)
+```
+
+-----------------
+
+```{r}
+fit_sca4 <- cfa(mod_ex, data = data, group = "sex", 
+                group.equal = c("loadings", "intercepts"), 
+                group.partial = "e4 ~1", std.lv = TRUE) 
+lavTestLRT(fit_sca4, fit_sca)
+```
+
+
+```{r}
+fit_sca6 <- cfa(mod_ex, data = data, group = "sex", 
+                group.equal = c("loadings", "intercepts"),
+                group.partial = "e6 ~1", std.lv = TRUE) 
+lavTestLRT(fit_sca6, fit_sca)
+```
+
+-----------------
+
+```{r}
+fit_sca7 <- cfa(mod_ex, data = data, group = "sex", 
+                group.equal = c("loadings", "intercepts"),
+                group.partial = "e7 ~1", std.lv = TRUE) 
+lavTestLRT(fit_sca7, fit_sca)
+```
+
+```{r}
+lavTestLRT(fit_sca6, fit_met)
+```
+
+# Testing Strict Invariance
+
+- The partial strict invariance model has a similar fit to the partial scalar invariance model
+
+- Conclusion: items `e1`, `e4`, `e7` are strict invariant, and item `e6` is weak invariant 
+
+- Final model: partial strict invariance model with freely estimated intercept for item `e6`.
+
+```{r}
+fit_str <- cfa(mod_ex, data = data, group = "sex", 
+                group.equal = c("loadings", "intercepts", "residuals"),
+                group.partial = "e6 ~1", std.lv = TRUE) 
+lavTestLRT(fit_sca6, fit_str)
+```
