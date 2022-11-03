@@ -1,0 +1,81 @@
+---
+title: "GC-3 Workshop: Exercise"
+author: "Yichi Zhang"
+date: "2022-11-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here) 
+library(haven)
+library(lavaan)
+library(tidyverse)
+library(psych)
+library(papaja)
+## install package pinsearch if first time using this package
+install.packages("devtools")
+devtools::install_github("marklhc/pinsearch")
+library(pinsearch)
+```
+
+In the demonstration, we investigated measurement invariance (MI) of the mini-IPIP across gender. Specifically, we focused on the subscale neuroticism. Please work on the subscale extraversion in this example. Good luck :) 
+
+# Import Data
+  
+```{r}
+data <- read.table(here::here("example", "IPIPFFM.dat"),
+                   header = TRUE)%>%
+  select("sex", "e1", "e4", "e6", "e7", "n1", "n2", "n6", "n8")
+head(data)
+```
+
+# Model Specification
+
+```{r}
+mod_ex <- 'specifiy your model here'
+# check model fit
+fit <- cfa(mod = , data = )
+```
+
+# MI testing
+
+```{r}
+# fit configural invariance model
+fit_con <- cfa(mod = , data = , group = , std.lv = TRUE) 
+# fit metric invariance model (loadings are constrained to be equal across groups)
+fit_met <- cfa(mod = , data = , group = , group.equal = , std.lv = TRUE)
+# Likelihood Ratio Test
+lavTestLRT(fit_con, fit_met)
+```
+
+```{r}
+# fit scalar invariance model
+fit_sca <- cfa(mod = , data = , group = , group.equal = , std.lv = TRUE) 
+# Likelihood Ratio test of scalar invairiance model and metric invariance model
+lavTestLRT()
+```
+
+```{r}
+pinsearch::pinSearch(config_mod = , data = , effect_size = TRUE,
+                     group = ,  type = )
+```
+
+```{r}
+# fit partial scalar invariance model
+fit_sca <- cfa(mod = , data = , group = , group.equal = , std.lv = TRUE) 
+# Likelihood Ratio test of partial scalar invairiance model and metric invariance model
+lavTestLRT()
+```
+
+```{r}
+# fit partial strict invariance model
+fit_str <- cfa(mod = , data = , group = , group.equal = , std.lv = TRUE) 
+# Likelihood Ratio test of partial strict invairiance model and partial scalar invariance model
+lavTestLRT()
+```
+
+What's your final model? 
+
+
+
